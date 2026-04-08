@@ -1,7 +1,7 @@
 {
-  "name": "linear-clone-server",
+  "name": "sprintly-server",
   "version": "1.0.0",
-  "description": "Linear clone backend API",
+  "description": "Sprintly backend API",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",

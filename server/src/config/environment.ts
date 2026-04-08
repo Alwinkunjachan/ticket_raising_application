@@ -19,7 +19,7 @@ export const env = {
   db: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'linear_clone',
+    name: process.env.DB_NAME || 'sprintly',
     user: process.env.DB_USER || 'postgres',
     password: isProduction ? requireEnv('DB_PASSWORD') : (process.env.DB_PASSWORD || ''),
   },

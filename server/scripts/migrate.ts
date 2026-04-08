@@ -22,7 +22,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const DB_HOST = process.env.DB_HOST || 'localhost';
 const DB_PORT = parseInt(process.env.DB_PORT || '5432', 10);
-const DB_NAME = process.env.DB_NAME || 'linear_clone';
+const DB_NAME = process.env.DB_NAME || 'sprintly';
 const DB_USER = process.env.DB_USER || 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'alwin.kunjachan@zeronorth.com';
