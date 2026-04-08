@@ -107,6 +107,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
       max-width: 90vw;
       padding-top: 8px !important;
       overflow-x: hidden;
+      overflow-y: auto;
     }
     .full-width {
       width: 100%;

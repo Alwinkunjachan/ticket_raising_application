@@ -120,10 +120,10 @@ body {
   --mdc-dialog-container-color: var(--surface-raised) !important;
 }
 
-// Dialog sizing
+// Dialog sizing — disable scroll by default; individual dialogs opt-in via overflow-y: auto
 .mat-mdc-dialog-content {
   max-height: unset !important;
-  overflow-x: hidden !important;
+  overflow: hidden !important;
 
   // Remove subscript wrapper — use margin for spacing instead
   .mat-mdc-form-field-subscript-wrapper {
