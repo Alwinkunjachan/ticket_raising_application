@@ -50,12 +50,24 @@ export class CycleService {
     status?: string;
     projectId: string;
   }) {
+    const today = new Date().toISOString().split('T')[0];
+    let status = data.status;
+    if (!status) {
+      if (data.endDate < today) {
+        status = 'completed';
+      } else if (data.startDate <= today) {
+        status = 'active';
+      } else {
+        status = 'upcoming';
+      }
+    }
+
     const cycle = await Cycle.create({
       name: data.name,
       description: data.description || null,
       startDate: data.startDate,
       endDate: data.endDate,
-      status: (data.status as any) || 'upcoming',
+      status: status as any,
       projectId: data.projectId,
     });
     await cacheInvalidate('sprintly:cycles:*');
