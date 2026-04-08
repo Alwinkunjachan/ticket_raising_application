@@ -29,14 +29,17 @@ src/
 │   │   │   └── member.model.ts   # Member (incl. provider field)
 │   │   ├── services/
 │   │   │   ├── api.service.ts          # HTTP client wrapper
-│   │   │   ├── auth.service.ts         # Auth state, login/register/refresh/logout
+│   │   │   ├── auth.service.ts         # Auth state, login/register/refresh/logout, isAdmin signal
+│   │   │   ├── idle.service.ts         # Idle timeout tracking (10 min idle → session expiry dialog)
 │   │   │   ├── notification.service.ts # Snackbar notifications
 │   │   │   └── theme.service.ts        # Theme toggle with localStorage
 │   │   ├── interceptors/
 │   │   │   └── auth.interceptor.ts     # JWT attachment + 401 auto-refresh
 │   │   └── guards/
 │   │       ├── auth.guard.ts           # Protects app routes (redirects to login)
-│   │       └── guest.guard.ts          # Protects auth pages (redirects to app)
+│   │       ├── guest.guard.ts          # Protects auth pages (redirects to app)
+│   │       ├── admin.guard.ts          # Protects admin routes (settings)
+│   │       └── role-redirect.guard.ts  # Routes admin→/issues, user→/my-issues
 │   │
 │   ├── features/                 # Feature modules (lazy-loaded)
 │   │   ├── auth/
@@ -72,28 +75,35 @@ src/
 │   │   │   │   └── cycles.service.ts
 │   │   │   └── cycles.routes.ts
 │   │   │
-│   │   └── labels/
-│   │       ├── components/
-│   │       │   └── label-list/
+│   │   ├── labels/
+│   │   │   ├── components/
+│   │   │   │   └── label-list/
+│   │   │   ├── services/
+│   │   │   │   └── labels.service.ts
+│   │   │   └── labels.routes.ts
+│   │   │
+│   │   └── settings/                   # Admin-only settings
 │   │       ├── services/
-│   │       │   └── labels.service.ts
-│   │       └── labels.routes.ts
+│   │       │   └── settings.service.ts # Analytics + user management API
+│   │       ├── settings.component.ts   # Analytics dashboard + user block/unblock
+│   │       └── settings.routes.ts
 │   │
 │   ├── layout/                   # Application shell
-│   │   ├── layout/               # Main layout with sidebar + content
-│   │   ├── sidebar/              # Navigation sidebar
+│   │   ├── layout/               # Main layout with sidebar + content + idle service
+│   │   ├── sidebar/              # Navigation sidebar (role-aware: admin vs user)
 │   │   │   └── sidebar-nav-item/ # Reusable nav item
-│   │   └── toolbar/              # Top toolbar (user menu + logout)
+│   │   └── toolbar/              # Top toolbar (user menu, settings for admin, logout)
 │   │
 │   ├── shared/                   # Reusable UI elements
 │   │   ├── components/
-│   │   │   ├── confirm-dialog/       # Generic confirmation dialog
-│   │   │   ├── empty-state/          # Empty state placeholder
-│   │   │   ├── status-icon/          # Status SVG icons
-│   │   │   ├── priority-icon/        # Priority SVG icons
-│   │   │   └── label-badge/          # Label color badge
+│   │   │   ├── confirm-dialog/         # Generic confirmation dialog
+│   │   │   ├── idle-timeout-dialog/    # Session expiry countdown dialog
+│   │   │   ├── empty-state/            # Empty state placeholder
+│   │   │   ├── status-icon/            # Status SVG icons
+│   │   │   ├── priority-icon/          # Priority SVG icons
+│   │   │   └── label-badge/            # Label color badge
 │   │   └── pipes/
-│   │       └── relative-time.pipe.ts # Date to relative time
+│   │       └── relative-time.pipe.ts   # Date to relative time
 │   │
 │   ├── app.component.ts         # Root component
 │   ├── app.config.ts            # Application providers (incl. auth interceptor)
@@ -130,18 +140,20 @@ Feature routes are **lazy-loaded** using `loadChildren`. Auth routes are public;
 
 ### Route Map
 
-| Path                     | Component               | Guard        | Description                    |
-| ------------------------ | ----------------------- | ------------ | ------------------------------ |
-| `/auth/login`            | LoginComponent          | `guestGuard` | Login/Register page            |
-| `/auth/google/callback`  | GoogleCallbackComponent | none         | Google OAuth redirect handler  |
-| `/`                      | Redirects to `/issues`  | `authGuard`  |                                |
-| `/issues`                | IssueListComponent      | `authGuard`  | All issues with filters        |
-| `/issues/:id`            | IssueDetailComponent    | `authGuard`  | Single issue detail/edit view  |
-| `/projects`              | ProjectListComponent    | `authGuard`  | Project grid                   |
-| `/projects/:id`          | ProjectDetailComponent  | `authGuard`  | Project with issues and cycles |
-| `/cycles`                | Redirects to `/projects`| `authGuard`  |                                |
-| `/cycles/:id`            | CycleDetailComponent    | `authGuard`  | Cycle with its issues          |
-| `/labels`                | LabelListComponent      | `authGuard`  | Label management               |
+| Path                     | Component               | Guard              | Description                           |
+| ------------------------ | ----------------------- | ------------------ | ------------------------------------- |
+| `/auth/login`            | LoginComponent          | `guestGuard`       | Login/Register page                   |
+| `/auth/google/callback`  | GoogleCallbackComponent | none               | Google OAuth redirect handler         |
+| `/`                      | (role redirect)         | `roleRedirectGuard`| Admin → `/issues`, User → `/my-issues`|
+| `/issues`                | IssueListComponent      | `authGuard`        | All issues with filters (admin)       |
+| `/my-issues`             | MyIssuesComponent       | `authGuard`        | Only assigned issues (normal user)    |
+| `/issues/:id`            | IssueDetailComponent    | `authGuard`        | Single issue detail/edit view         |
+| `/projects`              | ProjectListComponent    | `authGuard`        | Project grid                          |
+| `/projects/:id`          | ProjectDetailComponent  | `authGuard`        | Project with issues and cycles        |
+| `/cycles`                | Redirects to `/projects`| `authGuard`        |                                       |
+| `/cycles/:id`            | CycleDetailComponent    | `authGuard`        | Cycle with its issues                 |
+| `/labels`                | LabelListComponent      | `authGuard`        | Label management                      |
+| `/settings`              | SettingsComponent       | `adminGuard`       | Analytics dashboard + user management |
 
 ## Core Services
 
@@ -211,10 +223,12 @@ Behavior:
 
 ## Guards
 
-| Guard        | Applied to      | Behavior                                        |
-| ------------ | --------------- | ----------------------------------------------- |
-| `authGuard`  | LayoutComponent | Redirects to `/auth/login` if not authenticated |
-| `guestGuard` | LoginComponent  | Redirects to `/` if already authenticated       |
+| Guard                | Applied to        | Behavior                                              |
+| -------------------- | ----------------- | ----------------------------------------------------- |
+| `authGuard`          | LayoutComponent   | Redirects to `/auth/login` if not authenticated       |
+| `guestGuard`         | LoginComponent    | Redirects to `/` if already authenticated             |
+| `adminGuard`         | SettingsComponent | Redirects to `/` if not admin                         |
+| `roleRedirectGuard`  | Default route `/` | Admin → `/issues`, Normal user → `/my-issues`         |
 
 ## Feature Components
 

@@ -84,21 +84,22 @@ src/app/
 ### Layered Design
 
 ```
-Request → Routes → Middleware (authenticate + validate) → Controller → Service → Model → Database
-                                                              ↓
+Request → Helmet → Rate Limit → Routes → Middleware (authenticate + validate) → Controller → Service → Model → Database
+                                                                                     ↓
 Response ← Controller ← Service ← Model ← Database
                 ↓
          Error Handler (if error)
 ```
 
-| Layer        | Responsibility                                                  |
-| ------------ | --------------------------------------------------------------- |
-| Routes       | Map HTTP methods and paths to controllers                       |
-| Middleware   | JWT authentication, request validation (Zod), error handling    |
-| Controllers  | Parse request, call service, format response                    |
-| Services     | Business logic, transactions, data orchestration                |
-| Models       | Sequelize model definitions and associations                    |
-| Config       | Database, environment, Passport strategy setup                  |
+| Layer        | Responsibility                                                           |
+| ------------ | ------------------------------------------------------------------------ |
+| Security     | Helmet.js (headers), express-rate-limit (global + per-endpoint)          |
+| Routes       | Map HTTP methods and paths to controllers                                |
+| Middleware   | JWT authentication, admin authorization, Zod validation, error handling  |
+| Controllers  | Parse request, call service, format response                             |
+| Services     | Business logic, transactions, analytics, data orchestration              |
+| Models       | Sequelize model definitions and associations                             |
+| Config       | Database, environment (with production enforcement), Passport strategies |
 
 ### Directory Structure
 
@@ -181,8 +182,28 @@ The application uses **JWT-based authentication** with two strategies via Passpo
 **Route protection:**
 - Auth routes (`/api/v1/auth/*`) are public
 - All other `/api/v1/*` routes are protected by a global `authenticate` middleware applied at the router level
+- Analytics and user management routes require `requireAdmin` middleware
 - Frontend uses `authGuard` on the `LayoutComponent` route — all app pages require authentication
 - `guestGuard` prevents authenticated users from accessing the login page
+- `adminGuard` protects the settings page
+- `roleRedirectGuard` routes admin to `/issues` (All Issues) and normal users to `/my-issues`
+
+**Login attempt limiting:**
+- 5 failed attempts → account auto-blocked with `blockedReason: 'max_attempts'`
+- Auto-unlocks after 30 minutes on next login attempt
+- Admin blocks (`blockedReason: 'admin'`) never auto-unlock
+
+**Security middleware:**
+- `helmet()` sets security headers (X-Frame-Options, CSP, HSTS, etc.)
+- Global rate limit: 100 requests per 15 minutes per IP
+- Auth rate limit: 10 requests per 15 minutes per IP on login/register
+- Request body size limited to 1MB
+- Session cookies use `httpOnly: true`, `sameSite: 'lax'`
+
+**Idle timeout:**
+- Frontend `IdleService` tracks user activity (mousemove, keydown, scroll, touch)
+- After 10 minutes of inactivity, a dialog appears with a 30-second countdown
+- User can extend the session or sign out; auto-logout if no action
 
 ## Data Flow Examples
 

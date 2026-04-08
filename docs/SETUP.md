@@ -97,7 +97,15 @@ SESSION_SECRET=your-session-secret-here
 CLIENT_URL=http://localhost:4200
 ```
 
-### 4. Start the development server
+### 4. Run the database migration
+
+```bash
+npm run db:setup
+```
+
+This creates the database, all tables, seeds the admin user, and seeds default labels.
+
+### 5. Start the development server
 
 ```bash
 npm run dev
@@ -110,15 +118,8 @@ curl http://localhost:3000/health
 # { "status": "ok" }
 ```
 
-On first startup, the server will:
-- Connect to PostgreSQL
-- Create/sync all database tables
-- Seed 3 default members with password `password123` (if none exist)
-
-**Default login credentials:**
-- `alwin@example.com` / `password123`
-- `jane@example.com` / `password123`
-- `bob@example.com` / `password123`
+**Default admin credentials:**
+- `alwin.kunjachan@zeronorth.com` / `password123`
 
 ## Frontend Setup
 
@@ -201,9 +202,9 @@ If port 3000 or 4200 is taken:
 
 ### Database does not exist
 
-Create it manually:
+Run the migration script:
 ```bash
-psql -U postgres -c "CREATE DATABASE linear_clone;"
+cd server && npm run db:setup
 ```
 
 ### Permission denied for PostgreSQL
@@ -251,3 +252,8 @@ Google SSO is optional. The app works with local email/password auth only. To en
 | `GOOGLE_CALLBACK_URL`   | `http://localhost:3000/api/v1/auth/google/callback` | OAuth callback URL |
 | `SESSION_SECRET`        | `dev-session-secret`           | Express session secret                  |
 | `CLIENT_URL`            | `http://localhost:4200`        | Angular app URL (for CORS and redirects)|
+| `ADMIN_EMAIL`           | `alwin.kunjachan@zeronorth.com`| Admin email for migration seed          |
+| `ADMIN_NAME`            | `Alwin Kunjachan`              | Admin name for migration seed           |
+| `ADMIN_PASSWORD`        | `password123`                  | Admin password for migration seed       |
+
+**Production note:** In production (`NODE_ENV=production`), the server will crash on startup if `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `SESSION_SECRET`, or `DB_PASSWORD` are not set.

@@ -1,4 +1,4 @@
-# Linear Clone - Ticket Raising Application
+# Sprintly - Ticket Raising Application
 
 A full-stack issue tracking application inspired by [Linear](https://linear.app), built with Angular 19 and Express.js. Manage projects, issues, cycles (sprints), and labels through a modern, responsive UI powered by Angular Material.
 
@@ -10,18 +10,25 @@ A full-stack issue tracking application inspired by [Linear](https://linear.app)
 | Backend    | Express 4, TypeScript 5.7, Sequelize 6, Zod                 |
 | Auth       | Passport.js, JWT (access + refresh tokens), bcryptjs         |
 | OAuth      | Google OAuth 2.0 via passport-google-oauth20                 |
+| Security   | Helmet.js, express-rate-limit, login attempt limiting        |
 | Database   | PostgreSQL                                                   |
 | Tooling    | Angular CLI, Nodemon, ts-node                                |
 
 ## Features
 
 - **Authentication** - Local login (email/password) and Google SSO with JWT-based session management
+- **Role-based Access** - Admin sees all issues; normal users see only their assigned issues
+- **Admin Dashboard** - Analytics with project stats, issue breakdowns, top assignees, overdue cycles, and timeline
+- **User Management** - Admin can block/unblock users from the settings page
+- **Login Security** - 5 failed attempts locks the account; auto-unlocks after 30 minutes
+- **Rate Limiting** - API-level and auth-endpoint rate limiting via express-rate-limit
 - **Projects** - Create and manage projects with unique identifiers (e.g., `PROJ`)
 - **Issues** - Full lifecycle management with auto-generated keys (`PROJ-1`, `PROJ-2`)
 - **Cycles** - Time-boxed sprints with automatic completion and issue rollback
 - **Labels** - Global color-coded labels for categorization
 - **Members** - Assign issues to team members
 - **Filtering** - Filter issues by status, priority, assignee, cycle, and label
+- **Idle Timeout** - Auto-logout after 10 minutes of inactivity with session extend prompt
 - **Theming** - Dark and light mode with persistent preference
 
 ## Quick Start
@@ -56,10 +63,8 @@ cd ../client && ng serve
 
 Open [http://localhost:4200](http://localhost:4200) in your browser. You will be redirected to the login page.
 
-**Default credentials** (seeded on first startup):
-- Email: `alwin@example.com` / Password: `password123`
-- Email: `jane@example.com` / Password: `password123`
-- Email: `bob@example.com` / Password: `password123`
+**Default admin credentials** (seeded via `npm run db:setup`):
+- Email: `alwin.kunjachan@zeronorth.com` / Password: `password123`
 
 ## Project Structure
 
@@ -69,7 +74,7 @@ Ticket_raising_application/
 │   └── src/
 │       └── app/
 │           ├── core/        # Services, models, interceptors, guards
-│           ├── features/    # Feature modules (auth, issues, projects, cycles, labels)
+│           ├── features/    # Feature modules (auth, issues, projects, cycles, labels, settings)
 │           ├── layout/      # Layout shell (sidebar, toolbar)
 │           └── shared/      # Reusable components and pipes
 ├── server/                  # Express backend
@@ -107,9 +112,10 @@ Ticket_raising_application/
 
 | Command          | Description                       |
 | ---------------- | --------------------------------- |
-| `npm run dev`    | Start dev server with hot reload  |
-| `npm run build`  | Compile TypeScript to JavaScript  |
-| `npm start`      | Run compiled production build     |
+| `npm run dev`      | Start dev server with hot reload        |
+| `npm run build`    | Compile TypeScript to JavaScript        |
+| `npm start`        | Run compiled production build           |
+| `npm run db:setup` | Create database, tables, and seed data  |
 
 ### Client
 

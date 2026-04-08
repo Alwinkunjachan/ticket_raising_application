@@ -2,7 +2,7 @@
 
 ## Overview
 
-The application uses **PostgreSQL** with **Sequelize 6** as the ORM. The database name is `linear_clone`. Tables are auto-synced on server startup via `sequelize.sync()`.
+The application uses **PostgreSQL** with **Sequelize 6** as the ORM. The database name is `linear_clone`. Tables are created via the migration script (`npm run db:setup`).
 
 ## Entity Relationship Diagram
 
@@ -98,24 +98,29 @@ The application uses **PostgreSQL** with **Sequelize 6** as the ORM. The databas
 
 ### `members`
 
-| Column          | Type          | Constraints                    | Description                              |
-| --------------- | ------------- | ------------------------------ | ---------------------------------------- |
-| `id`            | UUID          | PK, auto-generated             | Unique identifier                        |
-| `name`          | VARCHAR(255)  | NOT NULL                       | Member's full name                       |
-| `email`         | VARCHAR(255)  | UNIQUE, NOT NULL               | Email address                            |
-| `avatar_url`    | VARCHAR(500)  | nullable                       | Profile picture URL                      |
-| `password_hash` | VARCHAR(255)  | nullable                       | bcrypt hash (null for Google-only users) |
-| `google_id`     | VARCHAR(255)  | UNIQUE, nullable               | Google OAuth user ID                     |
-| `provider`      | VARCHAR(50)   | NOT NULL, DEFAULT `'local'`    | Auth provider: `local` or `google`       |
-| `created_at`    | TIMESTAMP     | auto                           | Creation timestamp                       |
-| `updated_at`    | TIMESTAMP     | auto                           | Last update timestamp                    |
+| Column                 | Type          | Constraints                    | Description                                         |
+| ---------------------- | ------------- | ------------------------------ | --------------------------------------------------- |
+| `id`                   | UUID          | PK, auto-generated             | Unique identifier                                   |
+| `name`                 | VARCHAR(255)  | NOT NULL                       | Member's full name                                  |
+| `email`                | VARCHAR(255)  | UNIQUE, NOT NULL               | Email address                                       |
+| `avatar_url`           | VARCHAR(500)  | nullable                       | Profile picture URL                                 |
+| `password_hash`        | VARCHAR(255)  | nullable                       | bcrypt hash (null for Google-only users)             |
+| `google_id`            | VARCHAR(255)  | UNIQUE, nullable               | Google OAuth user ID                                |
+| `provider`             | VARCHAR(50)   | NOT NULL, DEFAULT `'local'`    | Auth provider: `local` or `google`                  |
+| `role`                 | VARCHAR(20)   | NOT NULL, DEFAULT `'user'`     | User role: `admin` or `user`                        |
+| `blocked`              | BOOLEAN       | NOT NULL, DEFAULT `false`      | Whether the user is blocked from logging in         |
+| `failed_login_attempts`| INTEGER       | NOT NULL, DEFAULT `0`          | Count of consecutive failed login attempts          |
+| `blocked_reason`       | VARCHAR(50)   | nullable                       | Why blocked: `admin` or `max_attempts`              |
+| `blocked_at`           | TIMESTAMPTZ   | nullable                       | When the account was blocked                        |
+| `created_at`           | TIMESTAMP     | auto                           | Creation timestamp                                  |
+| `updated_at`           | TIMESTAMP     | auto                           | Last update timestamp                               |
 
 **Security:** The `password_hash` column is excluded from all queries by default via Sequelize's `defaultScope`. It is only included when using the `withPassword` scope (used internally by the auth service).
 
-**Default Seed Data:** On first startup, if no members exist, three default members are created with password `password123` (bcrypt-hashed):
-- Alwin Kunjachan (alwin@example.com)
-- Jane Smith (jane@example.com)
-- Bob Johnson (bob@example.com)
+**Login attempt limiting:** After 5 failed attempts, the account is auto-blocked with `blocked_reason = 'max_attempts'`. It auto-unlocks after 30 minutes. Admin blocks (`blocked_reason = 'admin'`) never auto-unlock.
+
+**Default Seed Data:** Created via `npm run db:setup`. Seeds one admin user:
+- Alwin Kunjachan (alwin.kunjachan@zeronorth.com) with `role: admin`
 
 ### `labels`
 
@@ -167,4 +172,6 @@ DB_PASSWORD=postgres
 The Sequelize instance uses:
 - `underscored: true` - Maps camelCase model fields to snake_case columns
 - `timestamps: true` - Auto-manages `created_at` and `updated_at`
-- `sync()` - Auto-creates/alters tables on startup (development only)
+- `logging: false` - SQL query logging is disabled
+
+Tables are created via the migration script (`npm run db:setup`), not via `sequelize.sync()`.

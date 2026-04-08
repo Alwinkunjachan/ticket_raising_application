@@ -5,6 +5,9 @@
   # Stop PostgreSQL                                                                                                                                  
   brew services stop postgresql@18
 
+  # Restart PostgreSQL                                                                                                                                  
+brew services restart postgresql@18
+
   Server (Express API — port 3000)                                                                                                                   
   cd /Users/alwinkunjachan/Desktop/Project/Ticket_raising_application/server
   npm run dev                                                                                                                                        

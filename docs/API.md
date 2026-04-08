@@ -14,6 +14,18 @@ Authorization: Bearer <access_token>
 
 Unauthenticated requests to protected endpoints return `401 Unauthorized`.
 
+## Rate Limiting
+
+- **Global:** 100 requests per 15 minutes per IP on all endpoints
+- **Auth endpoints:** 10 requests per 15 minutes per IP on `/auth/login` and `/auth/register`
+- Exceeding the limit returns `429 Too Many Requests`
+
+## Login Attempt Limiting
+
+- After 5 failed password attempts, the account is automatically locked
+- Locked accounts auto-unlock after 30 minutes
+- Admin-blocked accounts (`blockedReason: 'admin'`) never auto-unlock — only an admin can unblock
+
 ---
 
 ## Health Check
@@ -464,6 +476,51 @@ Update a member.
 **Response `200`:** Updated member object  
 **Response `404`:** `{ "error": "Member not found" }`
 
+### `GET /api/v1/members/users`
+
+List all non-admin users. **Admin only.**
+
+**Response `200`:** Array of member objects (same shape as above)
+
+### `PATCH /api/v1/members/:id/toggle-block`
+
+Toggle a user's blocked status. **Admin only.** When unblocking, also resets `failedLoginAttempts` and `blockedReason`.
+
+**Response `200`:** Updated member object with `blocked`, `blockedReason` fields
+**Response `400`:** `{ "error": "Cannot block an admin user" }`
+
+---
+
+## Analytics
+
+### `GET /api/v1/analytics/dashboard`
+
+Get application-wide analytics. **Admin only.**
+
+**Response `200`:**
+```json
+{
+  "overview": {
+    "totalProjects": 4,
+    "totalIssues": 18,
+    "openIssues": 12,
+    "totalCycles": 3,
+    "activeCycles": 1,
+    "totalMembers": 5,
+    "blockedMembers": 0,
+    "totalLabels": 8,
+    "completionRate": 33
+  },
+  "issuesByStatus": [{ "status": "backlog", "count": 5 }],
+  "issuesByPriority": [{ "priority": "high", "count": 4 }],
+  "issuesPerProject": [{ "name": "Frontend App", "identifier": "FE", "count": 6 }],
+  "topAssignees": [{ "name": "Alwin", "email": "...", "total": 8, "completed": 3 }],
+  "overdueCycles": [{ "name": "Sprint 1", "end_date": "2026-04-01", "status": "active", "project_name": "..." }],
+  "recentIssues": [{ "identifier": "FE-6", "title": "...", "status": "done", "priority": "high", "created_at": "...", "project_name": "...", "assignee_name": "..." }],
+  "issuesOverTime": [{ "date": "2026-04-01", "count": 3 }]
+}
+```
+
 ---
 
 ## Error Responses
@@ -482,6 +539,7 @@ All errors follow a consistent format:
 | `401`       | Unauthorized (missing/invalid/expired JWT) |
 | `404`       | Resource not found    |
 | `409`       | Conflict (e.g., duplicate email on register) |
+| `429`       | Too many requests (rate limit exceeded) |
 | `500`       | Internal server error |
 
 Validation errors from Zod include field-level details:
