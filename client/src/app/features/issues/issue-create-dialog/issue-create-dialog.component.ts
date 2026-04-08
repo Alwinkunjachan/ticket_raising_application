@@ -27,19 +27,16 @@ import { CyclesService } from '../../cycles/services/cycles.service';
     <h2 mat-dialog-title>Create Issue</h2>
     <mat-dialog-content>
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Title</mat-label>
-        <input matInput [(ngModel)]="form.title" placeholder="Enter issue title" autofocus>
+        <input matInput [(ngModel)]="form.title" placeholder="Title" autofocus>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Description</mat-label>
-        <textarea matInput [(ngModel)]="form.description" rows="3" placeholder="Add a description"></textarea>
+        <textarea matInput [(ngModel)]="form.description" rows="3" placeholder="Description"></textarea>
       </mat-form-field>
 
       <div class="form-row">
         <mat-form-field appearance="outline">
-          <mat-label>Project</mat-label>
-          <mat-select [(ngModel)]="form.projectId" (selectionChange)="onProjectChange()">
+          <mat-select [(ngModel)]="form.projectId" (selectionChange)="onProjectChange()" placeholder="Project">
             @for (project of projects(); track project.id) {
               <mat-option [value]="project.id">{{ project.identifier }} - {{ project.name }}</mat-option>
             }
@@ -47,8 +44,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select [(ngModel)]="form.status">
+          <mat-select [(ngModel)]="form.status" placeholder="Status">
             @for (s of statuses; track s.value) {
               <mat-option [value]="s.value">{{ s.label }}</mat-option>
             }
@@ -58,8 +54,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
 
       <div class="form-row">
         <mat-form-field appearance="outline">
-          <mat-label>Priority</mat-label>
-          <mat-select [(ngModel)]="form.priority">
+          <mat-select [(ngModel)]="form.priority" placeholder="Priority">
             @for (p of priorities; track p.value) {
               <mat-option [value]="p.value">{{ p.label }}</mat-option>
             }
@@ -67,8 +62,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Assignee</mat-label>
-          <mat-select [(ngModel)]="form.assigneeId">
+          <mat-select [(ngModel)]="form.assigneeId" placeholder="Assignee">
             <mat-option [value]="null">Unassigned</mat-option>
             @for (member of members(); track member.id) {
               <mat-option [value]="member.id">{{ member.name }}</mat-option>
@@ -79,8 +73,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
 
       <div class="form-row">
         <mat-form-field appearance="outline">
-          <mat-label>Labels</mat-label>
-          <mat-select [(ngModel)]="form.labelIds" multiple>
+          <mat-select [(ngModel)]="form.labelIds" multiple placeholder="Labels">
             @for (label of labels(); track label.id) {
               <mat-option [value]="label.id">
                 <span class="label-dot" [style.background]="label.color"></span>
@@ -91,8 +84,7 @@ import { CyclesService } from '../../cycles/services/cycles.service';
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Cycle</mat-label>
-          <mat-select [(ngModel)]="form.cycleId">
+          <mat-select [(ngModel)]="form.cycleId" placeholder="Cycle">
             <mat-option [value]="null">No cycle</mat-option>
             @for (cycle of cycles(); track cycle.id) {
               <mat-option [value]="cycle.id">{{ cycle.name }}</mat-option>
@@ -114,9 +106,19 @@ import { CyclesService } from '../../cycles/services/cycles.service';
       width: 100%;
       max-width: 90vw;
       padding-top: 8px !important;
+      overflow-x: hidden;
     }
     .full-width {
       width: 100%;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+
+      mat-form-field {
+        flex: 1;
+        min-width: 0;
+      }
     }
     .label-dot {
       display: inline-block;

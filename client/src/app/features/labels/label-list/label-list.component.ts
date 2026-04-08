@@ -28,13 +28,11 @@ import { Label, CreateLabelDto } from '../../../core/models/label.model';
       <!-- Create Label Form -->
       <div class="create-form">
         <mat-form-field appearance="outline" class="field-name">
-          <mat-label>Name</mat-label>
-          <input matInput [(ngModel)]="newLabel.name" placeholder="Enter label name">
+          <input matInput [(ngModel)]="newLabel.name" placeholder="Label Name">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="field-color">
-          <mat-label>Color</mat-label>
-          <input matInput [(ngModel)]="newLabel.color" placeholder="Select color">
+          <input matInput [(ngModel)]="newLabel.color" placeholder="Color">
           <div matSuffix class="color-preview" [style.background]="newLabel.color">
             <input type="color" [(ngModel)]="newLabel.color" class="color-swatch-hidden">
           </div>
@@ -159,9 +157,17 @@ import { Label, CreateLabelDto } from '../../../core/models/label.model';
     .delete-btn {
       width: 28px;
       height: 28px;
-      line-height: 28px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       opacity: 0;
       transition: opacity 150ms;
+
+      ::ng-deep .mat-mdc-button-touch-target {
+        width: 28px;
+        height: 28px;
+      }
 
       mat-icon {
         font-size: 16px;
