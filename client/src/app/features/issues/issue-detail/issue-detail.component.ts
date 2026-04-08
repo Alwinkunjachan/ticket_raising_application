@@ -10,7 +10,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialog } from '@angular/material/dialog';
 import { StatusIconComponent } from '../../../shared/components/status-icon/status-icon.component';
 import { PriorityIconComponent } from '../../../shared/components/priority-icon/priority-icon.component';
-import { LabelBadgeComponent } from '../../../shared/components/label-badge/label-badge.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
 import { IssuesService } from '../services/issues.service';
@@ -29,7 +28,7 @@ import { Cycle } from '../../../core/models/cycle.model';
   imports: [
     CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
     MatSelectModule, MatFormFieldModule, MatInputModule,
-    StatusIconComponent, PriorityIconComponent, LabelBadgeComponent, RelativeTimePipe,
+    StatusIconComponent, PriorityIconComponent, RelativeTimePipe,
   ],
   template: `
     @if (issue) {

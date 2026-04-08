@@ -27,6 +27,10 @@ export class AuthService {
     const member = this.currentMemberSignal();
     return member ? member.name.charAt(0).toUpperCase() : '';
   });
+  readonly isAdmin = computed(() => {
+    const member = this.currentMemberSignal();
+    return member?.role === 'admin';
+  });
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadStoredAuth();

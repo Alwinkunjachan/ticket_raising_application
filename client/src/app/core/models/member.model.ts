@@ -4,6 +4,8 @@ export interface Member {
   email: string;
   avatarUrl: string | null;
   provider: string;
+  role: string;
+  blocked: boolean;
   createdAt: string;
   updatedAt: string;
 }
