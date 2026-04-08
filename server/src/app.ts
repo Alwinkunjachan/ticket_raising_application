@@ -54,7 +54,8 @@ app.use('/api/v1', routes);
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  const { getRedisAvailable } = require('./utils/cache');
+  res.json({ status: 'ok', redis: getRedisAvailable() ? 'connected' : 'unavailable' });
 });
 
 // Error handler (must be last)

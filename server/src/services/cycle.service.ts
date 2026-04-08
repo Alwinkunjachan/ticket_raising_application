@@ -1,18 +1,29 @@
 import { Op } from 'sequelize';
 import { Cycle, Issue, Project, Member, Label } from '../models';
 import { ApiError } from '../utils/api-error';
+import { cacheGet, cacheSet, cacheInvalidate, hashKey } from '../utils/cache';
 
 export class CycleService {
   async findAll(projectId?: string) {
+    const cacheKey = hashKey('sprintly:cycles:list', { projectId });
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
     const where = projectId ? { projectId } : {};
-    return Cycle.findAll({
+    const cycles = await Cycle.findAll({
       where,
       include: [{ model: Project, as: 'project', attributes: ['id', 'name', 'identifier'] }],
       order: [['startDate', 'ASC']],
     });
+    await cacheSet(cacheKey, cycles.map((c) => c.toJSON()), 300);
+    return cycles;
   }
 
   async findById(id: string) {
+    const cacheKey = `sprintly:cycles:${id}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
     const cycle = await Cycle.findByPk(id, {
       include: [
         { model: Project, as: 'project', attributes: ['id', 'name', 'identifier'] },
@@ -27,6 +38,7 @@ export class CycleService {
       ],
     });
     if (!cycle) throw ApiError.notFound('Cycle not found');
+    await cacheSet(cacheKey, cycle.toJSON(), 300);
     return cycle;
   }
 
@@ -38,7 +50,7 @@ export class CycleService {
     status?: string;
     projectId: string;
   }) {
-    return Cycle.create({
+    const cycle = await Cycle.create({
       name: data.name,
       description: data.description || null,
       startDate: data.startDate,
@@ -46,6 +58,9 @@ export class CycleService {
       status: (data.status as any) || 'upcoming',
       projectId: data.projectId,
     });
+    await cacheInvalidate('sprintly:cycles:*');
+    await cacheInvalidate('sprintly:analytics:*');
+    return cycle;
   }
 
   async update(
@@ -54,13 +69,18 @@ export class CycleService {
   ) {
     const cycle = await Cycle.findByPk(id);
     if (!cycle) throw ApiError.notFound('Cycle not found');
-    return cycle.update(data as any);
+    const updated = await cycle.update(data as any);
+    await cacheInvalidate('sprintly:cycles:*');
+    await cacheInvalidate('sprintly:analytics:*');
+    return updated;
   }
 
   async delete(id: string) {
     const cycle = await Cycle.findByPk(id);
     if (!cycle) throw ApiError.notFound('Cycle not found');
     await cycle.destroy();
+    await cacheInvalidate('sprintly:cycles:*');
+    await cacheInvalidate('sprintly:analytics:*');
   }
 
   /**
@@ -77,7 +97,12 @@ export class CycleService {
         },
       }
     );
-    return updated[0]; // number of rows affected
+    if (updated[0] > 0) {
+      await cacheInvalidate('sprintly:issues:*');
+      await cacheInvalidate('sprintly:cycles:*');
+      await cacheInvalidate('sprintly:analytics:*');
+    }
+    return updated[0];
   }
 
   /**

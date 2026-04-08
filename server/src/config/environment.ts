@@ -38,4 +38,5 @@ export const env = {
     secret: isProduction ? requireEnv('SESSION_SECRET') : (process.env.SESSION_SECRET || 'dev-session-secret'),
   },
   clientUrl: process.env.CLIENT_URL || 'http://localhost:4200',
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 };

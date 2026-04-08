@@ -1,17 +1,30 @@
 import { Op } from 'sequelize';
 import { Member } from '../models';
 import { ApiError } from '../utils/api-error';
+import { cacheGet, cacheSet, cacheInvalidate, cacheDel } from '../utils/cache';
 
 export class MemberService {
   async findAll() {
-    return Member.findAll({ order: [['name', 'ASC']] });
+    const cacheKey = 'sprintly:members:all';
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
+    const members = await Member.findAll({ order: [['name', 'ASC']] });
+    await cacheSet(cacheKey, members.map((m) => m.toJSON()), 600);
+    return members;
   }
 
   async findNonAdminUsers() {
-    return Member.findAll({
+    const cacheKey = 'sprintly:members:users';
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
+    const members = await Member.findAll({
       where: { role: { [Op.ne]: 'admin' } },
       order: [['name', 'ASC']],
     });
+    await cacheSet(cacheKey, members.map((m) => m.toJSON()), 600);
+    return members;
   }
 
   async findById(id: string) {
@@ -21,16 +34,22 @@ export class MemberService {
   }
 
   async create(data: { name: string; email: string; avatarUrl?: string }) {
-    return Member.create({
+    const member = await Member.create({
       name: data.name,
       email: data.email,
       avatarUrl: data.avatarUrl || null,
     });
+    await cacheInvalidate('sprintly:members:*');
+    await cacheInvalidate('sprintly:analytics:*');
+    return member;
   }
 
   async update(id: string, data: Partial<{ name: string; email: string; avatarUrl: string }>) {
     const member = await this.findById(id);
-    return member.update(data);
+    const updated = await member.update(data);
+    await cacheInvalidate('sprintly:members:*');
+    await cacheDel(`sprintly:member:${id}`);
+    return updated;
   }
 
   async toggleBlock(id: string) {
@@ -39,7 +58,6 @@ export class MemberService {
       throw ApiError.badRequest('Cannot block an admin user');
     }
     if (member.blocked) {
-      // Unblock — reset everything
       await member.update({
         blocked: false,
         failedLoginAttempts: 0,
@@ -47,13 +65,15 @@ export class MemberService {
         blockedAt: null,
       });
     } else {
-      // Block by admin
       await member.update({
         blocked: true,
         blockedReason: 'admin',
         blockedAt: new Date(),
       });
     }
+    await cacheInvalidate('sprintly:members:*');
+    await cacheDel(`sprintly:member:${id}`);
+    await cacheInvalidate('sprintly:analytics:*');
     return member;
   }
 }

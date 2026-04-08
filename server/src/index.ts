@@ -1,12 +1,24 @@
 import app from './app';
 import { env } from './config/environment';
 import { sequelize } from './models';
+import redis from './config/redis';
+import { setRedisAvailable, cacheInvalidate } from './utils/cache';
 
 async function bootstrap() {
   try {
     // Test database connection
     await sequelize.authenticate();
     console.log('Database connected successfully.');
+
+    // Connect Redis (optional — app works without it)
+    try {
+      await redis.connect();
+      setRedisAvailable(true);
+      console.log('Redis connected successfully.');
+    } catch (err) {
+      console.warn('Redis unavailable — running without cache.', (err as Error).message);
+      setRedisAvailable(false);
+    }
 
     // Seed Alwin as admin if no members exist
     const { Member } = await import('./models');
@@ -24,12 +36,22 @@ async function bootstrap() {
     // Check for expired cycles on startup
     const { cycleService } = await import('./services/cycle.service');
     const expired = await cycleService.checkExpiredCycles();
-    if (expired > 0) console.log(`Auto-completed ${expired} expired cycle(s).`);
+    if (expired > 0) {
+      console.log(`Auto-completed ${expired} expired cycle(s).`);
+      await cacheInvalidate('sprintly:issues:*');
+      await cacheInvalidate('sprintly:cycles:*');
+      await cacheInvalidate('sprintly:analytics:*');
+    }
 
     // Check every hour
     setInterval(async () => {
       const count = await cycleService.checkExpiredCycles();
-      if (count > 0) console.log(`Auto-completed ${count} expired cycle(s).`);
+      if (count > 0) {
+        console.log(`Auto-completed ${count} expired cycle(s).`);
+        await cacheInvalidate('sprintly:issues:*');
+        await cacheInvalidate('sprintly:cycles:*');
+        await cacheInvalidate('sprintly:analytics:*');
+      }
     }, 60 * 60 * 1000);
 
     app.listen(env.port, () => {

@@ -1,9 +1,14 @@
 import { QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
 import { Project, Issue, Cycle, Member, Label } from '../models';
+import { cacheGet, cacheSet } from '../utils/cache';
 
 class AnalyticsService {
   async getDashboard() {
+    const cacheKey = 'sprintly:analytics:dashboard';
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
     const [
       totalProjects,
       totalIssues,
@@ -46,7 +51,7 @@ class AnalyticsService {
         ? Math.round(((completedIssues?.count || 0) / totalIssues) * 100)
         : 0;
 
-    return {
+    const result = {
       overview: {
         totalProjects,
         totalIssues,
@@ -66,6 +71,9 @@ class AnalyticsService {
       recentIssues,
       issuesOverTime,
     };
+
+    await cacheSet(cacheKey, result, 600);
+    return result;
   }
 
   private async getIssuesByStatus() {

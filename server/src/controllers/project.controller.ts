@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { projectService } from '../services/project.service';
 
 export class ProjectController {
-  async findAll(_req: Request, res: Response, next: NextFunction) {
+  async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const projects = await projectService.findAll();
-      res.json(projects);
+      const page = Number(req.query.page) || 0;
+      const pageSize = Number(req.query.pageSize) || 0;
+      const result = await projectService.findAll(page, pageSize);
+      res.json(result);
     } catch (error) {
       next(error);
     }

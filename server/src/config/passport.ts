@@ -4,6 +4,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import bcrypt from 'bcryptjs';
 import { Member } from '../models';
 import { env } from './environment';
+import { cacheInvalidate, cacheDel } from '../utils/cache';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes
@@ -112,6 +113,8 @@ if (env.google.clientId && env.google.clientSecret) {
                 googleId: profile.id,
                 avatarUrl: member.avatarUrl || profile.photos?.[0]?.value || null,
               });
+              await cacheDel(`sprintly:member:${member.id}`);
+              await cacheInvalidate('sprintly:members:*');
             } else {
               // Create new member from Google profile
               member = await Member.create({
@@ -121,6 +124,7 @@ if (env.google.clientId && env.google.clientSecret) {
                 provider: 'google',
                 avatarUrl: profile.photos?.[0]?.value || null,
               });
+              await cacheInvalidate('sprintly:members:*');
             }
           }
 

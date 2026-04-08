@@ -7,6 +7,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from '../utils/jwt';
+import { cacheInvalidate } from '../utils/cache';
 
 type SafeMember = Omit<MemberAttributes, 'passwordHash'>;
 
@@ -45,6 +46,8 @@ class AuthService {
       passwordHash,
       provider: 'local',
     });
+
+    await cacheInvalidate('sprintly:members:*');
 
     const tokens = this.generateTokens(member);
     return { member: this.sanitizeMember(member), ...tokens };

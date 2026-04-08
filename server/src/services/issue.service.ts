@@ -1,6 +1,7 @@
 import { Op, WhereOptions } from 'sequelize';
 import { sequelize, Issue, Project, Member, Label, IssueLabel } from '../models';
 import { ApiError } from '../utils/api-error';
+import { cacheGet, cacheSet, cacheInvalidate, hashKey } from '../utils/cache';
 
 interface IssueFilters {
   projectId?: string;
@@ -12,6 +13,8 @@ interface IssueFilters {
   search?: string;
   sort?: string;
   order?: 'ASC' | 'DESC';
+  page?: string;
+  pageSize?: string;
 }
 
 interface CreateIssueData {
@@ -26,7 +29,7 @@ interface CreateIssueData {
 }
 
 export class IssueService {
-  async findAll(filters: IssueFilters) {
+  private buildQuery(filters: IssueFilters) {
     const where: WhereOptions = {};
 
     if (filters.projectId) where.projectId = filters.projectId;
@@ -61,14 +64,44 @@ export class IssueService {
       });
     }
 
-    return Issue.findAll({
-      where,
-      include: includeOptions,
-      order: [[sortField, sortOrder]],
-    });
+    return { where, include: includeOptions, order: [[sortField, sortOrder]] as any };
+  }
+
+  async findAll(filters: IssueFilters) {
+    const cacheKey = hashKey('sprintly:issues:list', filters);
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
+    const { page, pageSize, ...rest } = filters;
+    const query = this.buildQuery(rest);
+
+    const pageNum = Number(page);
+    const size = Number(pageSize);
+
+    let result: any;
+    if (pageNum > 0 && size > 0) {
+      const limit = Math.min(size, 100);
+      const offset = (pageNum - 1) * limit;
+      const { rows, count } = await Issue.findAndCountAll({
+        ...query,
+        limit,
+        offset,
+        distinct: true,
+      });
+      result = { data: rows, total: count, page: pageNum, pageSize: limit };
+    } else {
+      result = await Issue.findAll(query);
+    }
+
+    await cacheSet(cacheKey, result, 120);
+    return result;
   }
 
   async findById(id: string) {
+    const cacheKey = `sprintly:issues:${id}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
     const issue = await Issue.findByPk(id, {
       include: [
         { model: Project, as: 'project', attributes: ['id', 'name', 'identifier'] },
@@ -77,6 +110,8 @@ export class IssueService {
       ],
     });
     if (!issue) throw ApiError.notFound('Issue not found');
+
+    await cacheSet(cacheKey, issue.toJSON(), 120);
     return issue;
   }
 
@@ -126,6 +161,9 @@ export class IssueService {
       }
 
       await t.commit();
+      await cacheInvalidate('sprintly:issues:*');
+      await cacheInvalidate('sprintly:projects:*');
+      await cacheInvalidate('sprintly:analytics:*');
       return this.findById(issue.id);
     } catch (error) {
       await t.rollback();
@@ -151,6 +189,8 @@ export class IssueService {
       }
     }
 
+    await cacheInvalidate('sprintly:issues:*');
+    await cacheInvalidate('sprintly:analytics:*');
     return this.findById(id);
   }
 
@@ -159,6 +199,9 @@ export class IssueService {
     if (!issue) throw ApiError.notFound('Issue not found');
     await IssueLabel.destroy({ where: { issueId: id } });
     await issue.destroy();
+    await cacheInvalidate('sprintly:issues:*');
+    await cacheInvalidate('sprintly:projects:*');
+    await cacheInvalidate('sprintly:analytics:*');
   }
 }
 
