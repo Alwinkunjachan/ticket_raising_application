@@ -6,12 +6,15 @@ export interface MemberAttributes {
   name: string;
   email: string;
   avatarUrl: string | null;
+  passwordHash: string | null;
+  googleId: string | null;
+  provider: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface MemberCreationAttributes
-  extends Optional<MemberAttributes, 'id' | 'avatarUrl'> {}
+  extends Optional<MemberAttributes, 'id' | 'avatarUrl' | 'passwordHash' | 'googleId' | 'provider'> {}
 
 export class Member
   extends Model<MemberAttributes, MemberCreationAttributes>
@@ -21,6 +24,9 @@ export class Member
   declare name: string;
   declare email: string;
   declare avatarUrl: string | null;
+  declare passwordHash: string | null;
+  declare googleId: string | null;
+  declare provider: string;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -45,10 +51,32 @@ Member.init(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
+    passwordHash: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    googleId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+    },
+    provider: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: 'local',
+    },
   },
   {
     sequelize,
     tableName: 'members',
     underscored: true,
+    defaultScope: {
+      attributes: { exclude: ['passwordHash'] },
+    },
+    scopes: {
+      withPassword: {
+        attributes: { include: ['passwordHash'] },
+      },
+    },
   }
 );
