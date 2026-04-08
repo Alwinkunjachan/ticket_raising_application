@@ -176,8 +176,9 @@ The application uses **JWT-based authentication** with two strategies via Passpo
 **Token flow:**
 - On login/register, the server issues an **access token** (short-lived, default 15m) and a **refresh token** (long-lived, default 7d)
 - The Angular `authInterceptor` attaches the access token as a `Bearer` header to all API requests
-- On a `401` response, the interceptor automatically attempts a token refresh and retries the original request
+- On a `401` response, the interceptor attempts a token refresh and retries the original request
 - If refresh fails, the user is logged out and redirected to `/auth/login`
+- **On hard refresh:** `loadStoredAuth()` uses native `fetch()` (bypassing the interceptor) to verify tokens and load the profile. Guards await `authReady` before making routing decisions, preserving the user's current route.
 
 **Route protection:**
 - Auth routes (`/api/v1/auth/*`) are public

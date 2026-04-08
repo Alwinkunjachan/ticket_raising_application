@@ -184,7 +184,9 @@ class AuthService {
 }
 ```
 
-Tokens are stored in `localStorage` (`access_token`, `refresh_token`). On app startup, `loadStoredAuth()` checks for existing tokens and hydrates the auth state by calling `GET /auth/me`.
+Tokens are stored in `localStorage` (`access_token`, `refresh_token`). On app startup, `loadStoredAuth()` checks for existing tokens and hydrates the auth state. It uses **native `fetch()`** (not Angular's `HttpClient`) to bypass the interceptor and avoid refresh loops. If the access token is expired, it attempts a refresh via `POST /auth/refresh` before falling back to logout.
+
+The `authReady` Promise resolves when the initial auth check completes. Guards `await authService.authReady` before making routing decisions, ensuring hard refreshes preserve the user's session and current route.
 
 ### ApiService
 
@@ -218,17 +220,18 @@ A functional `HttpInterceptorFn` registered in `app.config.ts` via `provideHttpC
 Behavior:
 - **Skips** auth endpoints (`/auth/login`, `/auth/register`, `/auth/refresh`) — no token attached
 - **Attaches** `Authorization: Bearer <token>` header to all other requests
-- **On 401 response**: attempts a silent token refresh, then retries the original request with the new token
+- **On 401 response**: attempts a token refresh if a refresh token exists, then retries the original request
 - **On refresh failure**: calls `AuthService.logout()` to clear tokens and redirect to login
+- **Note**: The initial auth check on startup uses native `fetch()` to bypass this interceptor entirely
 
 ## Guards
 
 | Guard                | Applied to        | Behavior                                              |
 | -------------------- | ----------------- | ----------------------------------------------------- |
-| `authGuard`          | LayoutComponent   | Redirects to `/auth/login` if not authenticated       |
-| `guestGuard`         | LoginComponent    | Redirects to `/` if already authenticated             |
-| `adminGuard`         | SettingsComponent | Redirects to `/` if not admin                         |
-| `roleRedirectGuard`  | Default route `/` | Admin → `/issues`, Normal user → `/my-issues`         |
+| `authGuard`          | LayoutComponent   | Checks `localStorage` for token synchronously         |
+| `guestGuard`         | LoginComponent    | Checks `localStorage` — redirects to `/` if token exists |
+| `adminGuard`         | SettingsComponent | Awaits `authReady`, checks admin role                 |
+| `roleRedirectGuard`  | Default route `/` | Awaits `authReady`, routes admin→`/issues`, user→`/my-issues` |
 
 ## Feature Components
 

@@ -85,9 +85,10 @@ Migration script also supports: `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` (f
 ### Frontend
 - **All components are standalone** (no NgModules)
 - **State management:** Angular Signals (no NgRx)
-- **Auth state:** `AuthService` manages `currentMember`, `isAuthenticated`, `isAdmin` signals, tokens in `localStorage`
-- **HTTP interceptor:** `authInterceptor` in `app.config.ts` attaches Bearer tokens and handles 401 refresh
-- **Route guards:** `authGuard` (all app routes), `guestGuard` (login page), `adminGuard` (settings), `roleRedirectGuard` (default route)
+- **Auth state:** `AuthService` manages `currentMember`, `isAuthenticated`, `isAdmin` signals, tokens in `localStorage`. Exposes `authReady` Promise that resolves when initial auth check completes.
+- **Startup auth:** `loadStoredAuth()` uses native `fetch()` (not HttpClient) to avoid interceptor loops. Tries access token → if expired, refreshes → if both fail, clears tokens.
+- **HTTP interceptor:** `authInterceptor` in `app.config.ts` attaches Bearer tokens and handles 401 refresh for regular API calls (NOT used during startup auth check)
+- **Route guards:** `authGuard` (sync localStorage check), `guestGuard` (sync localStorage check), `adminGuard` (async, awaits `authReady`), `roleRedirectGuard` (async, awaits `authReady`)
 - **Role-based routing:** Admin → `/issues` (All Issues), Normal user → `/my-issues` (only assigned issues, no assignee filter)
 - **Idle timeout:** `IdleService` tracks activity, shows session expiring dialog after 10 min idle with 30-sec countdown
 - **Lazy loading:** All feature routes (`auth`, `issues`, `projects`, `cycles`, `labels`, `settings`) are lazy-loaded
