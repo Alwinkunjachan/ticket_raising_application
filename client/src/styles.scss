@@ -201,3 +201,21 @@ input[type="color"] {
     border-radius: 4px;
   }
 }
+
+// Idle timeout dialog panel
+.idle-timeout-panel {
+  .mat-mdc-dialog-container {
+    border-radius: 16px !important;
+    overflow: hidden;
+
+    .mdc-dialog__surface {
+      border-radius: 16px !important;
+      overflow: hidden !important;
+    }
+
+    .mat-mdc-dialog-surface {
+      border-radius: 16px !important;
+      overflow: hidden !important;
+    }
+  }
+}

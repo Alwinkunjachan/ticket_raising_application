@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { ToolbarComponent } from './toolbar/toolbar.component';
+import { IdleService } from '../core/services/idle.service';
 
 @Component({
   selector: 'app-layout',
@@ -44,6 +45,16 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
     }
   `]
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
+
+  constructor(private idleService: IdleService) {}
+
+  ngOnInit(): void {
+    this.idleService.start();
+  }
+
+  ngOnDestroy(): void {
+    this.idleService.stop();
+  }
 }

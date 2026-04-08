@@ -6,8 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog } from '@angular/material/dialog';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -29,28 +31,45 @@ import { AuthService } from '../../core/services/auth.service';
           <mat-icon>label</mat-icon>
           <span class="btn-text">Labels</span>
         </a>
-        <button mat-icon-button (click)="themeService.toggleTheme()" class="theme-btn"
-                [matTooltip]="themeService.isDark() ? 'Light mode' : 'Dark mode'">
-          <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-        </button>
 
         @if (authService.currentMember(); as member) {
-          <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn">
+          <button [matMenuTriggerFor]="userMenu" class="user-trigger">
             @if (member.avatarUrl) {
-              <img [src]="member.avatarUrl" class="user-avatar" alt="avatar" />
+              <img [src]="member.avatarUrl" class="user-avatar" alt="avatar"
+                   referrerpolicy="no-referrer" />
             } @else {
               <div class="user-avatar-placeholder">{{ authService.memberInitial() }}</div>
             }
-            <span class="user-name">{{ member.name }}</span>
-            <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
           </button>
-          <mat-menu #userMenu="matMenu" xPosition="before">
-            <div class="user-email-item" mat-menu-item disabled>{{ member.email }}</div>
-            <mat-divider></mat-divider>
-            <button mat-menu-item (click)="authService.logout()">
-              <mat-icon>logout</mat-icon>
-              <span>Sign out</span>
-            </button>
+          <mat-menu #userMenu="matMenu" xPosition="before" class="user-dropdown">
+            <ng-template matMenuContent>
+              <div class="user-info-header">
+                @if (member.avatarUrl) {
+                  <img [src]="member.avatarUrl" class="menu-avatar" alt="avatar"
+                       referrerpolicy="no-referrer" />
+                } @else {
+                  <div class="menu-avatar-placeholder">{{ authService.memberInitial() }}</div>
+                }
+                <span class="user-full-name">{{ getFirstName(member.name) }} {{ getLastName(member.name) }}</span>
+                <span class="user-email">{{ member.email }}</span>
+              </div>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="themeService.toggleTheme()">
+                <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+                <span>{{ themeService.isDark() ? 'Light mode' : 'Dark mode' }}</span>
+              </button>
+              @if (member.role === 'admin') {
+                <button mat-menu-item routerLink="/settings">
+                  <mat-icon>settings</mat-icon>
+                  <span>Settings</span>
+                </button>
+              }
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="confirmLogout()">
+                <mat-icon>logout</mat-icon>
+                <span>Sign out</span>
+              </button>
+            </ng-template>
           </mat-menu>
         }
       </div>
@@ -71,7 +90,7 @@ import { AuthService } from '../../core/services/auth.service';
     .toolbar-right {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
 
     .toolbar-btn {
@@ -102,81 +121,127 @@ import { AuthService } from '../../core/services/auth.service';
       }
     }
 
-    .theme-btn {
+    .user-trigger {
       width: 32px;
       height: 32px;
-      color: var(--text-secondary);
+      border-radius: 50%;
+      border: 2px solid var(--surface-border);
+      padding: 0;
+      cursor: pointer;
+      background: transparent;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: border-color 200ms;
 
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      &:hover {
+        border-color: var(--accent-primary);
       }
     }
 
-    .user-menu-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      color: var(--text-primary);
-      font-size: 13px;
-      font-weight: 500;
-      min-width: auto;
-      line-height: 1;
+    .user-avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
-    .user-avatar {
-      width: 24px;
-      height: 24px;
+    .user-avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      background: var(--accent-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-info-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 16px 12px;
+      gap: 6px;
+    }
+
+    .menu-avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
     }
 
-    .user-avatar-placeholder {
-      width: 24px;
-      height: 24px;
+    .menu-avatar-placeholder {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: var(--accent-primary);
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 16px;
       font-weight: 600;
     }
 
-    .user-name {
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .user-full-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
-    .dropdown-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+    .user-email {
+      font-size: 11px;
       color: var(--text-secondary);
     }
 
-    .user-email-item {
-      font-size: 12px;
-      color: var(--text-secondary);
-      opacity: 0.8;
+    ::ng-deep .user-dropdown {
+      .mat-mdc-menu-content {
+        padding: 4px 0;
+      }
+
+      &.mat-mdc-menu-panel {
+        border-radius: 12px;
+        min-width: 180px;
+        max-width: 200px;
+        margin-top: 4px;
+      }
     }
   `]
 })
 export class ToolbarComponent {
   constructor(
     public themeService: ThemeService,
-    public authService: AuthService
+    public authService: AuthService,
+    private dialog: MatDialog
   ) {}
+
+  getFirstName(fullName: string): string {
+    return fullName.split(' ')[0];
+  }
+
+  getLastName(fullName: string): string {
+    const parts = fullName.split(' ');
+    return parts.length > 1 ? parts.slice(1).join(' ') : '';
+  }
+
+  confirmLogout(): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Sign out',
+        message: 'Are you sure you want to sign out?',
+        confirmLabel: 'Sign out',
+      },
+      width: '360px',
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.authService.logout();
+      }
+    });
+  }
 }
