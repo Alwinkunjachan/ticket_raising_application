@@ -8,6 +8,7 @@ import { Subscription, filter } from 'rxjs';
 import { SidebarNavItemComponent } from '../sidebar-nav-item/sidebar-nav-item.component';
 import { ProjectsService } from '../../features/projects/services/projects.service';
 import { CyclesService } from '../../features/cycles/services/cycles.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Project } from '../../core/models/project.model';
 import { Cycle } from '../../core/models/cycle.model';
 
@@ -28,8 +29,8 @@ import { Cycle } from '../../core/models/cycle.model';
       <div class="sidebar-header">
         @if (!collapsed) {
           <div class="workspace-info">
-            <div class="workspace-avatar">L</div>
-            <span class="workspace-name">Linear Clone</span>
+            <div class="workspace-avatar">S</div>
+            <span class="workspace-name">Sprintly</span>
           </div>
         }
         <button mat-icon-button class="collapse-btn" (click)="toggleCollapse.emit()"
@@ -42,7 +43,11 @@ import { Cycle } from '../../core/models/cycle.model';
       <div class="sidebar-nav">
         <!-- Primary Nav -->
         <div class="nav-section">
-          <app-sidebar-nav-item icon="list_alt" label="All Issues" route="/issues" [collapsed]="collapsed" />
+          @if (authService.isAdmin()) {
+            <app-sidebar-nav-item icon="list_alt" label="All Issues" route="/issues" [collapsed]="collapsed" />
+          } @else {
+            <app-sidebar-nav-item icon="assignment_ind" label="My Issues" route="/my-issues" [collapsed]="collapsed" />
+          }
         </div>
 
         <!-- Projects Section -->
@@ -262,6 +267,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private projectsService: ProjectsService,
     private cyclesService: CyclesService,
     private router: Router,
+    public authService: AuthService,
   ) {}
 
   ngOnInit() {

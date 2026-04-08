@@ -33,7 +33,7 @@ import { NotificationService } from '../../../core/services/notification.service
       <div class="auth-card">
         <div class="auth-header">
           <mat-icon class="auth-logo">confirmation_number</mat-icon>
-          <h1>Linear Clone</h1>
+          <h1>Sprintly</h1>
           <p class="auth-subtitle">Issue tracking for modern teams</p>
         </div>
 
@@ -132,6 +132,11 @@ import { NotificationService } from '../../../core/services/notification.service
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      overflow: hidden;
+    }
+
     .auth-container {
       display: flex;
       align-items: center;
@@ -139,12 +144,13 @@ import { NotificationService } from '../../../core/services/notification.service
       min-height: 100vh;
       background: var(--surface-bg);
       padding: 24px;
+      overflow: hidden;
     }
 
     .auth-card {
       width: 100%;
       max-width: 420px;
-      padding: 40px 32px 32px;
+      padding: 32px 32px 28px;
       background: var(--sidebar-bg);
       border: 1px solid var(--surface-border);
       border-radius: 12px;
@@ -152,7 +158,7 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .auth-header {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 20px;
 
       .auth-logo {
         font-size: 40px;
@@ -179,8 +185,8 @@ import { NotificationService } from '../../../core/services/notification.service
     .auth-form {
       display: flex;
       flex-direction: column;
-      padding-top: 20px;
-      gap: 4px;
+      padding-top: 16px;
+      gap: 2px;
 
       mat-form-field {
         width: 100%;
@@ -200,7 +206,7 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       gap: 16px;
-      margin: 24px 0;
+      margin: 16px 0;
 
       mat-divider {
         flex: 1;
@@ -234,7 +240,15 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     ::ng-deep .mat-mdc-tab-body-wrapper {
-      min-height: 280px;
+      flex: 1;
+    }
+
+    ::ng-deep .mat-mdc-tab-body.mat-mdc-tab-body-active {
+      overflow: visible !important;
+
+      .mat-mdc-tab-body-content {
+        overflow: visible !important;
+      }
     }
   `]
 })
@@ -275,7 +289,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.notification.error(err.error?.error || err.error?.message || 'Login failed');
+        this.notification.error(err.error?.error?.message || err.error?.message || 'Login failed');
       },
     });
   }
@@ -295,7 +309,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.notification.error(err.error?.error || err.error?.message || 'Registration failed');
+        this.notification.error(err.error?.error?.message || err.error?.message || 'Registration failed');
       },
     });
   }
