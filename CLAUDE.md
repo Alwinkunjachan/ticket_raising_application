@@ -15,7 +15,7 @@ Sprintly — a full-stack issue tracking application inspired by Linear. Manages
 - **Auth:** Passport.js (passport-local + passport-google-oauth20), JWT (access + refresh tokens), bcryptjs
 - **Security:** Helmet.js (security headers), express-rate-limit, login attempt limiting (5 attempts, 30-min auto-unlock)
 - **Caching:** Redis (ioredis) with cache-aside pattern, graceful degradation when unavailable
-- **Database:** PostgreSQL (`linear_clone`)
+- **Database:** PostgreSQL (`sprintly`)
 - **Tooling:** Angular CLI, Nodemon, ts-node
 
 ## Project Structure
@@ -27,6 +27,7 @@ Sprintly — a full-stack issue tracking application inspired by Linear. Manages
 │       ├── features/    # auth/, issues/, projects/, cycles/, labels/, settings/ (lazy-loaded)
 │       ├── layout/      # LayoutComponent, SidebarComponent, ToolbarComponent
 │       └── shared/      # Reusable components, pipes, dialogs (idle-timeout, confirm)
+│   └── src/environments/  # Build-time config (environment.ts for dev, environment.prod.ts for prod)
 ├── server/              # Express API
 │   └── src/
 │       ├── config/      # database.ts, environment.ts, passport.ts, redis.ts
@@ -37,7 +38,8 @@ Sprintly — a full-stack issue tracking application inspired by Linear. Manages
 │       ├── services/    # Business logic layer (incl. analytics.service.ts)
 │       └── utils/       # api-error.ts, jwt.ts, cache.ts
 │   └── scripts/         # migrate.ts (database setup script)
-└── docs/                # ARCHITECTURE.md, API.md, DATABASE.md, FRONTEND.md, SETUP.md, REDIS.md
+├── docker-compose.yml   # Multi-service Docker orchestration
+└── docs/                # ARCHITECTURE.md, API.md, DATABASE.md, FRONTEND.md, SETUP.md, REDIS.md, DOCKER.md
 ```
 
 ## Common Commands
@@ -58,6 +60,14 @@ ng build             # Production build to dist/client/
 ng test              # Run unit tests via Karma
 ```
 
+### Docker (from project root)
+```bash
+docker compose up -d --build     # Build and start all services
+docker compose run --rm migrate  # Run database migration
+docker compose down              # Stop all services
+docker compose logs -f server    # Tail server logs
+```
+
 ## Environment
 
 Server environment lives in `server/.env` (see `.env.example` at root). Key variables:
@@ -74,7 +84,7 @@ Migration script also supports: `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` (f
 
 ### Backend
 - **Layered:** Routes → Middleware (helmet + rate-limit + authenticate + validate) → Controllers → Services → Cache (Redis) → Models
-- **Security middleware:** `helmet()` for headers, global rate limit (100/15min), auth-specific rate limit (10/15min)
+- **Security middleware:** `helmet()` for headers, global rate limit (100/15min in prod, 1000 in dev), auth-specific rate limit (10/15min in prod, 100 in dev)
 - **Auth flow:** `/api/v1/auth/*` routes are public; all other `/api/v1/*` routes are protected by global `authenticate` middleware in `routes/index.ts`
 - **Admin routes:** `requireAdmin` middleware on `/analytics/dashboard`, `/members/users`, `/members/:id/toggle-block`
 - **Login attempt limiting:** 5 failed attempts auto-blocks the account (`blockedReason: 'max_attempts'`); auto-unlocks after 30 minutes. Admin blocks (`blockedReason: 'admin'`) never auto-unlock.
@@ -96,10 +106,15 @@ Migration script also supports: `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` (f
 - **Role-based routing:** Admin → `/issues` (All Issues), Normal user → `/my-issues` (only assigned issues, no assignee filter)
 - **Idle timeout:** `IdleService` tracks activity, shows session expiring dialog after 10 min idle with 30-sec countdown
 - **Lazy loading:** All feature routes (`auth`, `issues`, `projects`, `cycles`, `labels`, `settings`) are lazy-loaded
+- **Environment config:** `client/src/environments/` — `environment.ts` (dev: `http://localhost:3000/api/v1`), `environment.prod.ts` (prod: `/api/v1` relative). `angular.json` uses `fileReplacements` to swap in prod builds.
+
+## Docker
+
+Multi-service Docker Compose setup: nginx (Angular SPA + API proxy on port 80), Express API (port 3000), PostgreSQL, Redis. Environment configured via root `.env` (template: `.env.docker`). nginx reverse-proxies `/api/*` to the server container. Angular production build uses relative API URLs.
 
 ## Database
 
-PostgreSQL database `linear_clone` with 6 tables: `projects`, `issues`, `cycles`, `members`, `labels`, `issue_labels`.
+PostgreSQL database `sprintly` with 6 tables: `projects`, `issues`, `cycles`, `members`, `labels`, `issue_labels`.
 
 Created via `npm run db:setup`. Default seed: admin user + 8 labels.
 
