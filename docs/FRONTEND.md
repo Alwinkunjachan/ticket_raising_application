@@ -12,12 +12,15 @@ npm install
 ng serve
 ```
 
-The app runs at `http://localhost:4200` and proxies API calls to `http://localhost:3000/api/v1`.
+The app runs at `http://localhost:4200`. The API URL is configured via Angular environments — `http://localhost:3000/api/v1` in development, `/api/v1` (relative) in production/Docker.
 
 ## Application Structure
 
 ```
 src/
+├── environments/
+│   ├── environment.ts           # Dev config (apiUrl: http://localhost:3000/api/v1)
+│   └── environment.prod.ts     # Prod config (apiUrl: /api/v1 — relative for nginx proxy)
 ├── app/
 │   ├── core/                     # Singleton services, models, guards, interceptors
 │   │   ├── models/
@@ -201,7 +204,7 @@ class ApiService {
 }
 ```
 
-Base URL: `http://localhost:3000/api/v1`
+Base URL: configured via `environment.apiUrl` — `http://localhost:3000/api/v1` in development, `/api/v1` in production. Angular's `fileReplacements` in `angular.json` swaps the environment file during production builds.
 
 ### ThemeService
 

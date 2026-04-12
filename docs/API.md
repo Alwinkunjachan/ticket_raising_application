@@ -1,6 +1,6 @@
 # API Reference
 
-**Base URL:** `http://localhost:3000/api/v1`
+**Base URL:** `http://localhost:3000/api/v1` (local dev) or `http://localhost/api/v1` (Docker)
 
 All request and response bodies use JSON. Dates are in ISO 8601 format unless noted otherwise.
 
@@ -16,8 +16,8 @@ Unauthenticated requests to protected endpoints return `401 Unauthorized`.
 
 ## Rate Limiting
 
-- **Global:** 100 requests per 15 minutes per IP on all endpoints
-- **Auth endpoints:** 10 requests per 15 minutes per IP on `/auth/login` and `/auth/register`
+- **Global:** 100 requests per 15 minutes per IP in production (1000 in development)
+- **Auth endpoints:** 10 requests per 15 minutes per IP on `/auth/login` and `/auth/register` in production (100 in development)
 - Exceeding the limit returns `429 Too Many Requests`
 
 ## Login Attempt Limiting
@@ -155,8 +155,10 @@ Initiates Google OAuth 2.0 flow. Redirects the browser to Google's consent scree
 
 Google redirects here after user consent. The server generates JWT tokens and redirects to:
 ```
-http://localhost:4200/auth/google/callback?accessToken=...&refreshToken=...
+${CLIENT_URL}/auth/google/callback?accessToken=...&refreshToken=...
 ```
+
+`CLIENT_URL` defaults to `http://localhost:4200` in local development or `http://localhost` in Docker.
 
 ---
 

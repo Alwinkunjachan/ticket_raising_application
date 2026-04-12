@@ -69,12 +69,14 @@ src/app/
 │   ├── services/      # ApiService, AuthService, ThemeService, NotificationService
 │   ├── interceptors/  # authInterceptor (JWT attachment + 401 refresh)
 │   └── guards/        # authGuard, guestGuard
+├── environments/      # Build-time configuration (dev vs prod API URL)
 ├── features/          # Feature-scoped components and services
 │   ├── auth/          # Login/Register page, Google callback
 │   ├── issues/        # Issue CRUD, filtering, detail view
 │   ├── projects/      # Project management
 │   ├── cycles/        # Sprint/cycle management
-│   └── labels/        # Label management
+│   ├── labels/        # Label management
+│   └── settings/      # Admin analytics dashboard + user management
 ├── layout/            # Application shell
 │   ├── layout/        # Main layout wrapper
 │   ├── sidebar/       # Navigation sidebar
@@ -224,8 +226,8 @@ The application uses **JWT-based authentication** with two strategies via Passpo
 
 **Security middleware:**
 - `helmet()` sets security headers (X-Frame-Options, CSP, HSTS, etc.)
-- Global rate limit: 100 requests per 15 minutes per IP
-- Auth rate limit: 10 requests per 15 minutes per IP on login/register
+- Global rate limit: 100 requests per 15 minutes per IP in production (1000 in development)
+- Auth rate limit: 10 requests per 15 minutes per IP on login/register in production (100 in development)
 - Request body size limited to 1MB
 - Session cookies use `httpOnly: true`, `sameSite: 'lax'`
 
@@ -259,7 +261,7 @@ The application uses **JWT-based authentication** with two strategies via Passpo
 3. User consents → Google redirects to /api/v1/auth/google/callback
 4. Passport GoogleStrategy finds/creates member by googleId or email
 5. AuthController.googleCallback() generates JWT tokens
-6. Server redirects to http://localhost:4200/auth/google/callback?accessToken=...&refreshToken=...
+6. Server redirects to ${CLIENT_URL}/auth/google/callback?accessToken=...&refreshToken=...
 7. GoogleCallbackComponent extracts tokens, stores them, fetches profile
 8. Router navigates to /
 ```
@@ -285,3 +287,21 @@ The application uses **JWT-based authentication** with two strategies via Passpo
 11. IssuesService receives response
 12. Component closes dialog and refreshes list
 ```
+
+## Docker Deployment
+
+In Docker, the application runs behind an **nginx reverse proxy** that serves the Angular SPA and proxies API requests:
+
+```
+Browser :80 → nginx (client container)
+                ├── Static files → Angular SPA
+                └── /api/*      → Express server :3000 → PostgreSQL + Redis
+```
+
+Key differences from local development:
+- Angular is built with the **production** environment (`environment.prod.ts`), using relative API URLs (`/api/v1`) instead of `http://localhost:3000/api/v1`
+- nginx handles SPA routing (`try_files $uri $uri/ /index.html`) and API proxying
+- All services communicate via Docker's internal network (`server`, `postgres`, `redis` hostnames)
+- Database migration runs as a one-shot container (`docker compose run --rm migrate`)
+
+See [Docker Guide](DOCKER.md) for full setup and operational commands.
