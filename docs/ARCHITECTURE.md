@@ -192,6 +192,15 @@ Key design decisions:
 
 See [Redis Documentation](REDIS.md) for full details on cache keys, TTLs, and invalidation matrix.
 
+### Board View (Kanban)
+
+Issue lists support two view modes toggled via the page header:
+
+- **List view** — Paginated row list (default). Uses `MatPaginator` with server-side pagination.
+- **Board view** — Kanban-style columns grouped by status (Backlog → Todo → In Progress → Ready to Test → Testing → Done → Cancelled). Loads up to 200 issues at once. Cards can be dragged between columns to change status using the **native HTML5 Drag and Drop API**. Drops perform an **optimistic local update** (the signal is updated immediately), and the API call happens in the background.
+
+Available on: Issues page, My Issues page, and Cycle Detail page.
+
 ### Global Labels
 
 Labels are application-wide rather than project-scoped. This simplifies the data model and allows consistent categorization across projects. The many-to-many relationship between issues and labels is managed through the `IssueLabel` junction table.

@@ -104,10 +104,15 @@ REDIS_URL=redis://localhost:6379
 ### 4. Run the database migration
 
 ```bash
-npm run db:setup
+npm run db:setup     # Create database, tables, admin user, and default labels
 ```
 
-This creates the database, all tables, seeds the admin user, and seeds default labels.
+Optionally seed sample data (projects, cycles, issues, members) for testing:
+
+```bash
+npm run db:seed      # Seed sample data (idempotent — skips if projects exist)
+npm run db:reset     # Wipe all data, re-seed admin + labels (use before re-seeding)
+```
 
 ### 5. Start the development server
 

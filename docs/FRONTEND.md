@@ -52,7 +52,8 @@ src/
 │   │   │
 │   │   ├── issues/
 │   │   │   ├── components/
-│   │   │   │   ├── issue-list/
+│   │   │   │   ├── issue-list/          # List view with board/list toggle
+│   │   │   │   ├── issue-board/         # Kanban board view (drag-and-drop)
 │   │   │   │   ├── issue-detail/
 │   │   │   │   ├── issue-row/
 │   │   │   │   └── issue-create-dialog/
@@ -245,7 +246,9 @@ Behavior:
 
 ### Issues
 
-- **IssueListComponent** - Displays a filterable, sortable, **paginated** list of issues. Supports filtering by status, priority, assignee, cycle, and label. Uses `MatPaginator` with 10/25/50 page size options. Filters reset pagination to page 1.
+- **IssueListComponent** - Displays a filterable, sortable, **paginated** list of issues. Supports filtering by status, priority, assignee, cycle, and label. Uses `MatPaginator` with 10/25/50 page size options. Filters reset pagination to page 1. Includes a **list/board view toggle** in the header.
+- **IssueBoardComponent** - **Kanban board view** that groups issues into columns by status (Backlog, Todo, In Progress, Ready to Test, Testing, Done, Cancelled). Supports **drag-and-drop** between columns using native HTML5 Drag and Drop API to change issue status. Performs optimistic local updates on drop. Used by IssueListComponent, MyIssuesComponent, and CycleDetailComponent.
+- **MyIssuesComponent** - Same as IssueListComponent but pre-filtered to the current user's assigned issues. Also supports list/board toggle.
 - **IssueDetailComponent** - Full issue editor with inline-editable fields for status, priority, assignee, cycle, and labels. Supports delete with confirmation.
 - **IssueRowComponent** - Single issue row showing identifier, title, status icon, priority icon, and assignee avatar.
 - **IssueCreateDialogComponent** - Material dialog for creating issues with project, title, status, priority, assignee, and label selection.
@@ -259,7 +262,7 @@ Behavior:
 ### Cycles
 
 - **CycleListComponent** - List view of cycles showing name, date range, status, and issue count.
-- **CycleDetailComponent** - Single cycle view with its issues listed.
+- **CycleDetailComponent** - Single cycle view with its issues. Includes a **list/board view toggle** to switch between row list and Kanban board.
 - **CycleCreateDialogComponent** - Dialog for creating cycles with date pickers and status selection.
 
 ### Labels

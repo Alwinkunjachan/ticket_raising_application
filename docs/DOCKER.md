@@ -83,7 +83,9 @@ Default admin credentials (from `.env`):
 | `server`   | node:18-alpine     | 3000  | Express API server                   |
 | `postgres` | postgres:16-alpine | 5432  | PostgreSQL database                  |
 | `redis`    | redis:7-alpine     | 6379  | Redis cache (optional, graceful degradation) |
-| `migrate`  | node:18-alpine     | —     | One-shot: runs DB migration then exits |
+| `migrate`  | node:18-alpine     | —     | One-shot: creates tables + admin + labels |
+| `seed`     | node:18-alpine     | —     | One-shot: seeds sample data (projects, issues, etc.) |
+| `reset`    | node:18-alpine     | —     | One-shot: wipes all data, re-seeds admin + labels |
 
 ## Environment Variables
 
@@ -136,9 +138,11 @@ docker compose logs -f
 docker compose logs -f server
 ```
 
-### Run migration
+### Database management
 ```bash
-docker compose run --rm migrate
+docker compose run --rm migrate    # Create tables + admin + labels (safe to re-run)
+docker compose run --rm seed       # Seed sample data for testing
+docker compose run --rm reset      # Wipe everything, re-seed admin + labels
 ```
 
 ### Stop services

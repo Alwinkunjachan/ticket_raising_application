@@ -175,3 +175,15 @@ The Sequelize instance uses:
 - `logging: false` - SQL query logging is disabled
 
 Tables are created via the migration script (`npm run db:setup`), not via `sequelize.sync()`.
+
+## Database Scripts
+
+All scripts are in `server/scripts/` and available as npm scripts. In Docker, they run as one-shot services.
+
+| Script          | npm command      | Docker command                    | Description                                         |
+| --------------- | ---------------- | --------------------------------- | --------------------------------------------------- |
+| `migrate.ts`    | `npm run db:setup` | `docker compose run --rm migrate` | Creates database, tables, admin user, default labels. Idempotent. |
+| `seed.ts`       | `npm run db:seed`  | `docker compose run --rm seed`    | Seeds sample data (members, projects, cycles, issues). Skips if data exists. |
+| `reset.ts`      | `npm run db:reset` | `docker compose run --rm reset`   | Truncates all tables, re-seeds admin + labels, flushes Redis cache. |
+
+All scripts ensure the admin user and 8 default labels are always present. The seed script creates 4 sample members, 3 projects, 7 cycles, and 28 issues with labels.

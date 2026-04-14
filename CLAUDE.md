@@ -37,7 +37,7 @@ Sprintly — a full-stack issue tracking application inspired by Linear. Manages
 │       ├── routes/      # Route definitions (auth routes public, analytics admin-only, rest require JWT)
 │       ├── services/    # Business logic layer (incl. analytics.service.ts)
 │       └── utils/       # api-error.ts, jwt.ts, cache.ts
-│   └── scripts/         # migrate.ts (database setup script)
+│   └── scripts/         # migrate.ts, seed.ts, reset.ts (database scripts)
 ├── docker-compose.yml   # Multi-service Docker orchestration
 └── docs/                # ARCHITECTURE.md, API.md, DATABASE.md, FRONTEND.md, SETUP.md, REDIS.md, DOCKER.md
 ```
@@ -50,6 +50,8 @@ npm run dev          # Start dev server with nodemon (port 3000)
 npm run build        # Compile TypeScript to dist/
 npm start            # Run compiled production build
 npm run db:setup     # Create database, tables, seed admin + labels
+npm run db:seed      # Seed sample data (projects, cycles, issues)
+npm run db:reset     # Wipe all data, re-seed admin + labels
 npx tsc --noEmit     # Type-check without emitting
 ```
 
@@ -64,6 +66,8 @@ ng test              # Run unit tests via Karma
 ```bash
 docker compose up -d --build     # Build and start all services
 docker compose run --rm migrate  # Run database migration
+docker compose run --rm seed     # Seed sample data
+docker compose run --rm reset    # Wipe all data, re-seed admin + labels
 docker compose down              # Stop all services
 docker compose logs -f server    # Tail server logs
 ```
